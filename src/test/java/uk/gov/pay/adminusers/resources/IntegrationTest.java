@@ -2,11 +2,13 @@ package uk.gov.pay.adminusers.resources;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.dropwizard.testing.ConfigOverride;
-import io.dropwizard.testing.junit.DropwizardClientRule;
+import io.dropwizard.testing.junit5.DropwizardClientExtension;
 import io.restassured.specification.RequestSpecification;
-import org.junit.Before;
-import org.junit.ClassRule;
-import uk.gov.pay.adminusers.infra.DropwizardAppWithPostgresRule;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.TestInstance;
+import org.junit.jupiter.api.extension.RegisterExtension;
+import uk.gov.pay.adminusers.infra.DropwizardAppWithPostgresExtension;
 import uk.gov.pay.adminusers.utils.DatabaseTestHelper;
 
 import javax.ws.rs.Consumes;
@@ -18,7 +20,9 @@ import javax.ws.rs.core.Response;
 import static io.restassured.RestAssured.given;
 import static io.restassured.http.ContentType.JSON;
 import static javax.ws.rs.core.MediaType.APPLICATION_JSON;
+import static org.junit.jupiter.api.TestInstance.Lifecycle.PER_CLASS;
 
+@TestInstance(PER_CLASS)
 public class IntegrationTest {
 
     /* default */ static final String USERS_RESOURCE_URL = "/v1/api/users";
@@ -42,11 +46,10 @@ public class IntegrationTest {
     /* default */ static final String SERVICE_INVITES_RESOURCE_URL = "/v1/api/services/%d/invites";
     /* default */ static final String INVITE_USER_RESOURCE_URL = "/v1/api/invites/user";
 
-    @ClassRule
-    public static final DropwizardAppWithPostgresRule APP;
+    public static final DropwizardClientExtension NOTIFY;
 
-    @ClassRule
-    public static final DropwizardClientRule NOTIFY;
+    @RegisterExtension
+    public static final DropwizardAppWithPostgresExtension APP;
 
     protected DatabaseTestHelper databaseHelper;
     protected ObjectMapper mapper;
@@ -64,13 +67,17 @@ public class IntegrationTest {
     }
 
     static {
-        NOTIFY = new DropwizardClientRule(new NotifyResource());
-        APP = new DropwizardAppWithPostgresRule(
-                ConfigOverride.config("notify.notificationBaseURL", () -> NOTIFY.baseUri().toString())
-        );
+        NOTIFY = new DropwizardClientExtension(new NotifyResource());
+        try {
+            NOTIFY.before();
+        } catch (Throwable throwable) {
+            throwable.printStackTrace();
+        }
+        APP = new DropwizardAppWithPostgresExtension(
+                ConfigOverride.config("notify.notificationBaseURL", () -> NOTIFY.baseUri().toString()));
     }
 
-    @Before
+    @BeforeEach
     public void initialise() {
         databaseHelper = APP.getDatabaseTestHelper();
         mapper = new ObjectMapper();
