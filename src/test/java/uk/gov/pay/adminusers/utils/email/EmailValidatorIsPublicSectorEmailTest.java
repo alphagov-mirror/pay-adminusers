@@ -9,9 +9,9 @@ import java.util.List;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.Is.is;
 
-public class EmailValidatorIsPublicSectorEmailTest {
+class EmailValidatorIsPublicSectorEmailTest {
 
-    public static Collection<Object[]> data() {
+    static Collection<Object[]> data() {
         return List.of(new Object[][] {
                 // main validations
                 {"", false},
@@ -129,13 +129,14 @@ public class EmailValidatorIsPublicSectorEmailTest {
                 {"valid@subdomain.wmca.org.uk", true},
                 {"valid@subdomain.york.ac.uk", true},
                 {"valid@subdomain.digitalaccessibilitycentre.org", true},
+                {"valid@subdomain.fermanaghomagh.com", true},
 
         });
     }
 
     @ParameterizedTest
     @MethodSource("data")
-    public void isPublicSectorEmail_shouldEvaluateWhetherOrNotItIsPublicSectorEmail(
+    void isPublicSectorEmail_shouldEvaluateWhetherOrNotItIsPublicSectorEmail(
             String email, boolean testResult) {
         boolean result = EmailValidator.isPublicSectorEmail(email);
         assertThat("Expected " + email + " to be " + (testResult ? "valid" : "invalid"), result, is(testResult));
